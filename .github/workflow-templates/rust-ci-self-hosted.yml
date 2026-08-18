@@ -1,0 +1,74 @@
+# Starter workflow – self-hosted runners
+#
+# Template variables (replace before committing):
+#   {{ actions_org }}    – GitHub org or user that hosts the rust-ci actions
+#                          (e.g. bitcoincore-dev when using the upstream repo)
+#   {{ actions_repo }}   – name of that repository (e.g. rust-ci-template)
+#   {{ actions_ref }}    – ref to pin the actions to (e.g. main or a SHA)
+#   {{ runner_label }}   – label(s) of your self-hosted runner
+#                          (e.g. self-hosted, or [self-hosted, linux, x64])
+#   {{ cache_root }}     – persistent cache directory on the runner host
+#                          (e.g. /mnt/data/github-runner-cache)
+#
+# GitHub's built-in template variable:
+#   $default-branch      – replaced with the default branch name when a user
+#                          creates a workflow from this starter template
+
+name: CI (self-hosted)
+
+on:
+  push:
+    branches: [$default-branch]
+  pull_request:
+    branches: [$default-branch]
+
+jobs:
+  build:
+    name: Build & test
+    runs-on: {{ runner_label }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Guard against disk exhaustion before anything writes to the cache.
+      - uses: {{ actions_org }}/{{ actions_repo }}/runner-disk-guard@{{ actions_ref }}
+        with:
+          cache-root: {{ cache_root }}
+
+      # Isolate CARGO_HOME per job so parallel jobs on shared runner users
+      # do not race on ~/.cargo/bin.  Must come before install-rust-toolchain.
+      - uses: {{ actions_org }}/{{ actions_repo }}/isolate-cargo-env@{{ actions_ref }}
+
+      - uses: {{ actions_org }}/{{ actions_repo }}/install-rust-toolchain@{{ actions_ref }}
+        with:
+          toolchain-file: rust-toolchain.toml   # remove if no toolchain file in repo
+          components: rustfmt, clippy
+
+      # Restore persistent Cargo registry / target cache.
+      - uses: {{ actions_org }}/{{ actions_repo }}/runner-cargo-cache@{{ actions_ref }}
+        with:
+          operation: bind-env
+          cache-key: ${{ github.repository }}-${{ github.ref_name }}
+          cache-root: {{ cache_root }}
+          include-target: "true"
+
+      - uses: {{ actions_org }}/{{ actions_repo }}/runner-cargo-cache@{{ actions_ref }}
+        with:
+          operation: restore
+          cache-root: {{ cache_root }}
+
+      - name: fmt
+        run: cargo fmt --all -- --check
+
+      - name: clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: test
+        run: cargo test --all-features
+
+      # Persist registry + target for the next run.
+      - uses: {{ actions_org }}/{{ actions_repo }}/runner-cargo-cache@{{ actions_ref }}
+        if: always()
+        with:
+          operation: save
+          cache-root: {{ cache_root }}

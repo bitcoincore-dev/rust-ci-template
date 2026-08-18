@@ -8,6 +8,36 @@ This repository has **no crates**—only reusable workflow building blocks. Work
 
 (or a pinned SHA for reproducibility).
 
+## Starter workflows (GitHub template)
+
+The directory [`.github/workflow-templates/`](.github/workflow-templates/) contains **GitHub org-level starter workflows** that appear under *Actions → New workflow* for any repository in the org.  
+Each `.yml` file is paired with a `.properties.json` metadata file.
+
+### Template variables
+
+The workflow files use two kinds of placeholder that must be replaced before the workflow runs:
+
+| Variable | Kind | Description |
+| --- | --- | --- |
+| `$default-branch` | GitHub built-in | Substituted automatically by GitHub with the repo's default branch when a user instantiates the workflow. Do **not** replace manually. |
+| `{{ actions_org }}` | Handlebar | GitHub org or user that owns the rust-ci actions repo (e.g. `bitcoincore-dev`). |
+| `{{ actions_repo }}` | Handlebar | Name of the actions repository (e.g. `rust-ci-template`). |
+| `{{ actions_ref }}` | Handlebar | Ref or SHA to pin the actions (e.g. `main`, or a commit SHA for reproducibility). |
+| `{{ runner_label }}` | Handlebar | Self-hosted runner label(s) — `rust-ci-self-hosted.yml` only. |
+| `{{ cache_root }}` | Handlebar | Persistent cache directory on the runner host — `rust-ci-self-hosted.yml` only. |
+
+**Example substitution** (GitHub-hosted workflow):
+
+```yaml
+# before
+- uses: {{ actions_org }}/{{ actions_repo }}/install-rust-toolchain@{{ actions_ref }}
+
+# after
+- uses: bitcoincore-dev/rust-ci-template/install-rust-toolchain@main
+```
+
+Replace all `{{ … }}` placeholders with `sed` or your editor's find-and-replace before committing the workflow to your repository.
+
 ## Actions
 
 ### `install-rust-toolchain`

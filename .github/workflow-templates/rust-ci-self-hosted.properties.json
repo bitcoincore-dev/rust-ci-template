@@ -1,0 +1,6 @@
+{
+  "name": "Rust CI (self-hosted)",
+  "description": "Build, test, fmt, and clippy on a self-hosted runner with disk guard, isolated Cargo env, and persistent cache.",
+  "iconName": "octicon-server",
+  "categories": ["Rust", "CI", "self-hosted"]
+}
