@@ -1,0 +1,6 @@
+{
+  "name": "Rust CI (GitHub-hosted)",
+  "description": "Build, test, fmt, and clippy on ubuntu-latest. Uses the rust-ci shared actions.",
+  "iconName": "octicon-gear",
+  "categories": ["Rust", "CI"]
+}
